@@ -12,6 +12,12 @@ from opex_manifest_generator.opex_manifest import OpexManifestGenerator
 import importlib.metadata
 
 def parse_args():
+    class EmptyIsTrueFixity(argparse.Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            if len(values) == 0:
+                values = ["SHA-1"]
+            setattr(namespace, self.dest, values)
+    
     parser = argparse.ArgumentParser(description = "OPEX Manifest Generator for Preservica Uploads")
     parser.add_argument('root', default = os.getcwd(), help = "The root path to generate Opexes for")
     parser.add_argument("-c", "--autoclass", required = False,
@@ -32,9 +38,9 @@ def parse_args():
                         help= """Assign a prefix when utilising the --autoclass option. Prefix will append any text before all generated text.
                         When utilising the {both} option fill in like: [catalog-prefix, accession-prefix] without square brackets.                        
                         """)
-    parser.add_argument("-fx", "--fixity", required = False, const = "SHA-1", default = None,
-                        nargs = '?', choices = ['NONE', 'SHA-1', 'MD5', 'SHA-256', 'SHA-512'], type = str.upper,
-                        help="Generates a hash for each file and adds it to the opex, can select the algorithm to utilise.")
+    parser.add_argument("-fx", "--fixity", required = False, nargs = '*', default = ['SHA-1'],
+                        choices = ['NONE', 'SHA-1', 'MD5', 'SHA-256', 'SHA-512'], type = str.upper, action=EmptyIsTrueFixity,
+                        help="Generates a hash for each file and adds it to the opex, can select one or more algorithms to utilise. -fx SHA-1 MD5")
     parser.add_argument("-rme", "--remove-empty", required = False, action = 'store_true', default = False,
                         help = "Remove and log empty directories from root. Log will be exported to 'meta' / output folder.")
     parser.add_argument("-o", "--output", required = False, nargs = 1,
